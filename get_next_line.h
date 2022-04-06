@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   get_next_line.h                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: min-jo <min-jo@student.42.fr>              +#+  +:+       +#+        */
+/*   By: min-jo <min-jo@student.42seoul.kr>         +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2021/05/18 13:26:37 by min-jo            #+#    #+#             */
-/*   Updated: 2021/06/26 16:22:05 by min-jo           ###   ########.fr       */
+/*   Updated: 2022/04/08 17:15:57 by min-jo           ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,61 +22,62 @@
 #  endif
 # endif
 
-typedef enum	e_state
+typedef enum e_state_gnl
 {
-	STATE_MALLOC_ERROR = -1,
-	STATE_FD_ERROR,
-	STATE_START,
-	STATE_CHECK_NL,
-	STATE_NEW_READ,
-	STATE_TIDY
-}				t_state;
+	STATE_GNL_ERROR,
+	STATE_GNL_START,
+	STATE_GNL_CHECK_MALLOC_READ,
+	STATE_GNL_MAKE_LINE,
+	STATE_GNL_FINISH,
+}	t_e_state_gnl;
 
-enum			e_node
+typedef struct s_gnl_read_info
 {
-	NODE_INDEX,
-	NODE_DATA,
-};
+}	t_gnl_read_info;
 
-# define NOT_USE -1
-
-typedef struct	s_fds
+typedef struct s_gnl_tree
 {
-	struct s_index	*head;
-	struct s_index	*tail;
-}				t_fds;
+	int			fd;
+	t_gnl_node	*head;
+	t_gnl_node	*last;
+	size_t		node_cnt;
+	size_t		start;
+	size_t		end;
+	size_t		cnt;
+	int			height;
+	t_gnl_tree	*left;
+	t_gnl_tree	*right;
+}	t_gnl_tree;
 
-typedef struct	s_index
+typedef struct s_gnl_node
 {
-	int				fd;
-	int				cnt;
-	int				len;
-	int				nl_flag;
-	struct s_data	*data_head;
-	struct s_data	*data_tail;
-	struct s_index	*next;
-	struct s_index	*pre;
-}				t_index;
+	char		str[BUFFER_SIZE];
+	t_gnl_node	*next;
+}	t_gnl_node;
 
-typedef struct	s_data
+typedef enum e_gnl_tree
 {
-	char			str[BUFFER_SIZE];
-	int				start;
-	int				end;
-	int				read;
-	struct s_data	*next;
-}				t_data;
+	GNL_TREE_DO_NOTHING,
+	GNL_TREE_UPDATE_HIEGHT,
+	GNL_TREE_ROTATE_LEFT,
+	GNL_TREE_ROTATE_RIGHT,
+}	t_e_gnl_tree;
 
-void			*new_node(int flag, int fd);
-t_index			*find_index(int fd, t_fds *fds);
-int				clear_fds(t_fds *fds);
-void			*ft_memcpy(void *dst, const void *src, size_t n);
-int				free_last(t_fds *fds, t_index **index, int fd_error);
-
-int				start(int fd, t_fds *fds, t_index **index, char **line);
-int				check_data_nl(t_index **index, char **line);
-int				new_read(t_index **index);
-int				tidy_str(t_fds *fds, t_index **index, char *line);
-int				get_next_line(int fd, char **line);
+/*
+* get_next_line_utils.c
+*/
+t_gnl_tree		*new_bucket(int fd);
+t_gnl_tree		*tree_map_search(int fd, t_gnl_tree *root, t_gnl_tree **pre,
+					t_e_gnl_tree flag);
+char			*tree_map_delete(int fd, t_gnl_tree *root, char *ret);
+void			tree_map_valance();
+char			*free_tree_map(t_gnl_tree *root);
+/*
+* get_next_line.c
+*/
+t_e_state_gnl	start(int fd, t_gnl_tree *root, t_gnl_tree **bucket_ret);
+t_e_state_gnl	check_malloc_read(t_gnl_tree *bucket);
+t_e_state_gnl	make_line(t_gnl_tree *bucket, char **ret);
+char			*get_next_line(int fd);
 
 #endif
